@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalDescriptionItem = document.querySelector(".modal__description-item");
     const modalCostItem = document.querySelector(".modal__cost-item");
     const searchInput = document.querySelector(".search__input");
+    const menuContainer = document.querySelector(".menu__container");
 
     // сохранение дефолтных значений формы
     const textModalBtn = modalFileBtn.textContent;
@@ -154,6 +155,16 @@ document.addEventListener("DOMContentLoaded", () => {
             document.addEventListener("keydown", closeModal);
         }
     });
+
+// ФИЛЬТР ПО КАТЕГОРИЯМ
+menuContainer.addEventListener('click', event =>{
+    const target = event.target;
+    if(target.tagName === 'A') {
+        const result = dataBase.filter(item => item.category === target.dataset.category)
+        renderCard(result);
+    }
+
+})
 
     // закрыть модальное окно "Объявление"
     modalAdd.addEventListener("click", closeModal);

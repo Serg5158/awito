@@ -2,9 +2,8 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     // массив для хранения объявлений
-
     const dataBase = JSON.parse(localStorage.getItem("awito")) || [];
-
+    let counter = dataBase.length; // счетчик ID обьявлений
     const addAd = document.querySelector(".add__ad");
     const modalAdd = document.querySelector(".modal__add");
     const modalBtnSubmit = document.querySelector(".modal__btn-submit");
@@ -20,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalHeaderItem = document.querySelector(".modal__header-item");
     const modalDescriptionItem = document.querySelector(".modal__description-item");
     const modalCostItem = document.querySelector(".modal__cost-item");
+    const searchInput = document.querySelector(".search__input");
 
     // сохранение дефолтных значений формы
     const textModalBtn = modalFileBtn.textContent;
@@ -48,11 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
     //функция закрытия модальных окон
     const closeModal = (event) => {
         const target = event.target;
-        if (
-            target.closest(".modal__close") ||
-            target.classList.contains("modal") ||
-            event.code === "Escape"
-        ) {
+        if (target.closest(".modal__close") || target.classList.contains("modal") || event.code === "Escape") {
             document.removeEventListener("keydown", closeModal);
             modalAdd.classList.add("hide");
             modalItem.classList.add("hide");
@@ -63,14 +59,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
     // вывод карточки объявления
-    const renderCard = () => {
+    const renderCard = (DB = dataBase) => {
         catalog.textContent = "";
 
-        dataBase.forEach((item, i) => {
+        DB.forEach((item) => {
+            //  console.log(item.id);
             catalog.insertAdjacentHTML(
                 "beforeend",
                 `
-                <li class="card" data-id="${i}">
+                <li class="card" data-id="${item.id}">
 					<img class="card__image" src="data:image/jpeg;base64,${item.image}" alt="test">
 					<div class="card__description">
 						<h3 class="card__header">${item.nameItem}</h3>
@@ -81,9 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
             );
         });
     };
-    // при заполнении формы - проверка
-
-    modalSubmit.addEventListener("input", checkForm);
 
     modalFileInput.addEventListener("change", (event) => {
         const target = event.target;
@@ -105,24 +99,38 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // отправка формы
+    //ПОИСК
+    searchInput.addEventListener("input", () => {
+        const valueSearch = searchInput.value.trim().toLowerCase();
+        if (valueSearch.length > 2) {
+            const result = dataBase.filter(
+                (item) =>
+                    item.nameItem.toLowerCase().includes(valueSearch) ||
+                    item.descriptionItem.toLowerCase().includes(valueSearch)
+            );
+            renderCard(result);
+        }
+    });
 
+    // отправка формы
     modalSubmit.addEventListener("submit", (event) => {
         event.preventDefault(); // отмена дефолтного поведения Submit
         const itemObj = {};
         for (const elem of elementsModalSubmit) {
             itemObj[elem.name] = elem.value;
         }
+        itemObj.id = counter++;
         itemObj.image = infoPhoto.base64;
         dataBase.push(itemObj);
         closeModal({ target: modalAdd });
         saveDB();
         renderCard();
-        console.log(dataBase);
     });
 
-    // открыть модальное окно "Объявление"
+    // при заполнении формы - проверка
+    modalSubmit.addEventListener("input", checkForm);
 
+    // открыть модальное окно "Объявление"
     addAd.addEventListener("click", () => {
         modalAdd.classList.remove("hide");
         modalBtnSubmit.disabled = true; // блокировать кнопку отправить
@@ -130,30 +138,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // открыть модальное окно "Купить"
-
     catalog.addEventListener("click", (event) => {
-        const card = event.target.closest(".card");
-
+        const target = event.target;
+        const card = target.closest(".card");
         if (card) {
-            const cardId = card.getAttribute("data-id");
-            modalImg.src = `data:image/jpeg;base64,${dataBase[cardId].image}`;
-            modalHeaderItem.textContent = dataBase[cardId].nameItem;
-            modalStatusItem.textContent =
-                dataBase[cardId].status === "new" ? "Отличное" : "Хорошее";
-            modalDescriptionItem.textContent = dataBase[cardId].descriptionItem;
-            modalCostItem.textContent = dataBase[cardId].costItem;
+            const item = dataBase.find((obj) => {
+                return obj.id === parseInt(card.dataset.id);
+            });
+            modalImg.src = `data:image/jpeg;base64,${item.image}`;
+            modalHeaderItem.textContent = item.nameItem;
+            modalStatusItem.textContent = item.status === "new" ? "Новый" : "Б/У";
+            modalDescriptionItem.textContent = item.descriptionItem;
+            modalCostItem.textContent = item.costItem + " ₽";
             modalItem.classList.remove("hide");
             document.addEventListener("keydown", closeModal);
         }
     });
 
     // закрыть модальное окно "Объявление"
-
     modalAdd.addEventListener("click", closeModal);
-
     // закрыть модальное окно "Купить"
-
     modalItem.addEventListener("click", closeModal);
-
     renderCard();
 });
